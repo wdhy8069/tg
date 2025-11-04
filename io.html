@@ -1,330 +1,269 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>密集爱心弹窗与满屏祝福</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: "Microsoft YaHei", sans-serif;
-        }
-        body {
-            overflow: hidden;
-            background-color: #000000;
-            height: 100vh;
-            width: 100vw;
-        }
-        /* 引导页样式 */
-        .intro-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-        }
-        .intro-content {
-            width: 360px;
-            height: 180px;
-            background: white;
-            border-radius: 10px;
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
-        .intro-text {
-            font-size: 18px;
-            font-weight: bold;
-            margin-bottom: 20px;
-            color: #333;
-        }
-        .intro-btn {
-            padding: 8px 32px;
-            font-size: 16px;
-            font-weight: bold;
-            background: #A7D3FF;
-            color: white;
-            border: none;
-            border-radius: 5px;
-            cursor: pointer;
-            transition: background 0.3s;
-        }
-        .intro-btn:hover {
-            background: #86C5FF;
-        }
-        /* 提示弹窗样式：缩小尺寸增加密度 */
-        .tip-window {
-            position: fixed;
-            width: 120px; /* 原200px，缩小40% */
-            height: 36px; /* 原50px，缩小28% */
-            border-radius: 5px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            color: #333;
-            font-size: 14px; /* 原16px，适配小尺寸 */
-            font-weight: bold;
-            z-index: 999;
-            transition: transform 0.03s linear;
-        }
-    </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1.0" />
+<title>爱心~</title>
+<style>
+  html,body{
+    height:100%;margin:0;overflow:hidden;
+    font-family:"微软雅黑",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+    background:
+      radial-gradient(1200px 600px at 50% 45%, rgba(255,255,255,.65), rgba(255,255,255,0) 60%),
+      radial-gradient(circle at 50% 45%, #fff4f7 0%, #c9eaff 100%);
+  }
+  .stage{position:relative;width:100%;height:100%;}
+  .msg{
+    position:absolute;left:50%;top:50%;
+    padding:10px 16px;border-radius:16px;
+    color:#fff;font-weight:700;
+    font-size:clamp(14px,3vmin,22px);
+    text-shadow:0 2px 8px rgba(0,0,0,.28);
+    opacity:0;
+    transform:
+      translate(-50%,-50%) translate(var(--dx),var(--dy)) scale(.75) rotate(var(--rot));
+    animation: flight var(--dur) cubic-bezier(.25,.7,.3,1) var(--delay) both;
+    box-shadow:0 8px 26px rgba(0,0,0,.22);
+    will-change: transform, opacity;
+    background: var(--bg);
+  }
+
+  /* 第一阶段：散开→回收→定型为心（停住不消失） */
+  @keyframes flight{
+    0%{
+      opacity:0;
+      transform:translate(-50%,-50%) translate(var(--dx),var(--dy)) scale(.75) rotate(var(--rot));
+    }
+    18%{ opacity:1; }
+    45%{
+      transform:translate(-50%,-50%) translate(calc(var(--dx)*.2),calc(var(--dy)*.2)) scale(1.06);
+    }
+    70%{
+      transform:translate(-50%,-50%) translate(calc(var(--dx)*1.15),calc(var(--dy)*1.15)) scale(.95) rotate(var(--rot));
+    }
+    88%{
+      transform:translate(-50%,-50%) translate(calc(var(--heart-x)*.6),calc(var(--heart-y)*.6)) scale(.9) rotate(var(--heart-rot));
+    }
+    100%{
+      opacity:1;
+      transform:translate(-50%,-50%) translate(var(--heart-x),var(--heart-y)) scale(1) rotate(var(--heart-rot));
+    }
+  }
+
+  /* 文字淡出→心瓣显形（用两个半圆） */
+  .msg::before,.msg::after{
+    content:'';
+    position:absolute;left:50%;top:0;
+    background:inherit;border-radius:50px 50px 0 0;
+    width:22px;height:34px;opacity:0;transition:opacity .28s ease;
+    transform-origin:0 100%;transform:rotate(-45deg);
+  }
+  .msg::after{ left:0;transform-origin:100% 100%;transform:rotate(45deg); }
+  .msg.heart-mode{ color:transparent; text-shadow:none; }
+  .msg.heart-mode::before,.msg.heart-mode::after{ opacity:1; }
+
+  /* 定型后：轻微“呼吸”2秒（随后触发二次爆炸） */
+  .msg.locked{
+    animation:none; /* 停止flight，固定位置 */
+    transform:translate(-50%,-50%) translate(var(--heart-x),var(--heart-y)) scale(1) rotate(var(--heart-rot));
+    opacity:1;
+  }
+  .msg.locked.pulse{
+    animation:pulse 2.2s ease-in-out 1; /* 只跳动一次，为爆炸前蓄势 */
+  }
+  @keyframes pulse{
+    0%,100%{ transform:translate(-50%,-50%) translate(var(--heart-x),var(--heart-y)) scale(1); }
+    50%   { transform:translate(-50%,-50%) translate(var(--heart-x),var(--heart-y)) scale(1.08); }
+  }
+
+  /* 第二阶段：最终爆炸（从心形位置向外飞散并淡出） */
+  .msg.burst{
+    animation: burst 1.4s cubic-bezier(.17,.6,.2,1) forwards;
+  }
+  @keyframes burst{
+    0%{
+      opacity:1;
+      transform:translate(-50%,-50%) translate(var(--heart-x),var(--heart-y)) scale(1);
+      filter:blur(0);
+    }
+    70%{
+      opacity:.9;
+      transform:
+        translate(-50%,-50%)
+        translate(calc(var(--heart-x) + var(--bx)*0.7), calc(var(--heart-y) + var(--by)*0.7))
+        scale(.9) rotate(var(--rot));
+      filter:blur(.3px);
+    }
+    100%{
+      opacity:0;
+      transform:
+        translate(-50%,-50%)
+        translate(calc(var(--heart-x) + var(--bx)), calc(var(--heart-y) + var(--by)))
+        scale(.7) rotate(var(--rot));
+      filter:blur(1px);
+    }
+  }
+
+  .center-title{
+    position:absolute;left:50%;top:50%;
+    transform:translate(-50%,-50%);
+    font-weight:800;letter-spacing:.12em;
+    font-size:clamp(18px,4vmin,28px);
+    color:rgba(255,105,180,.6);
+    text-shadow:0 2px 10px rgba(255,105,180,.15);
+    opacity:.0; pointer-events:none;
+    animation:titleIn 1.2s ease 0.8s both;
+  }
+  @keyframes titleIn{
+    from{opacity:0; transform:translate(-50%,-55%);}
+    to  {opacity:.95; transform:translate(-50%,-50%);}
+  }
+
+  .replay{
+    position:absolute;right:18px;bottom:18px;
+    padding:10px 14px;border:none;border-radius:10px;
+    background:rgba(255,255,255,.5);
+    backdrop-filter:blur(8px);
+    color:#222;font-weight:600;cursor:pointer;
+    box-shadow:0 5px 20px rgba(0,0,0,.22);
+  }
+</style>
 </head>
 <body>
-    <!-- 引导页 -->
-    <div class="intro-modal" id="introModal">
-        <div class="intro-content">
-            <div class="intro-text">请接受我的祝福</div>
-            <button class="intro-btn" id="startBtn">好</button>
-        </div>
-    </div>
+  <div class="stage" id="stage">
+    <div class="center-title" id="title"> I love you ♥</div>
+  </div>
+  <button class="replay" id="replay">重放</button>
 
-    <script>
-        // 核心配置：重点调整密集相关参数
-        const CONFIG = {
-            MESSAGES: [
-                "早点休息", "天冷了，多穿衣服", "多喝水哦~", "保持好心情", 
-                "期待下一次见面", "愿所有烦恼都消失", "我想你了", "别熬夜", 
-                "好好爱自己", "顺顺利利", "今天过得开心嘛", "保持微笑呀", "记得吃水果","250"
-            ],
-            HEART_COUNT: 200,       // 原38个，增加110%，提升顶点密度
-            POP_INTERVAL_MS: 40,   // 原80ms，缩短50%，弹窗显示更快
-            EXPLODE_COUNT: 350,    // 满屏弹窗同步增加密度
-            EXPLODE_INTERVAL_MS: 20,// 满屏弹窗显示更快
-            GATHER_STEPS: 24,      // 收拢动画步数不变，保持流畅
-            GATHER_INTERVAL_MS: 30,
-            JITTER_RANGE: 8,       // 原14，缩小43%，减少位置偏移避免分散
-            MARGIN: 4              // 原8，缩小50%，允许弹窗更贴近屏幕边缘
-        };
+<script>
+/* —— 写你喜欢的 —— */
+const tips=[
+ '好好吃饭','天天开心','少生气','多吃饭','不要减肥',
+   '吹牛逼呢','记得想爸爸','爱你','小狗蛋吧','有你真好',
+   '少吃洋芋涨憨掉','一顿吃两碗','有事就说出来','少点争执',
+   '想陪你看星星','今夜的梦给你','偏爱你','你是人间四月天',
+   '拥抱要紧一点','想你成习惯了','一瞬也是永恒','么么哒','小狗日记',
+   'May I love you','约会在晴天','期待明天见','比如你和我','希望片刻变永久',
+   '想和你看海','此刻的风想你','遇见你后时间变慢','偷偷折个角不能翻篇',
+   '想靠近你一点','顾玉兰大傻逼','心软是因为你','想牵你的手看日落',
+   '幸福放慢倍数','心跳藏不住','有你世界亮一点','小小幸福的'
+];
 
-        // 生成柔和 pastel 颜色 
-        function randomPastelHex() {
-            const h = Math.random();
-            const l = 0.85;
-            const s = 0.45;
-            let r, g, b;
-            const c = (1 - Math.abs(2 * l - 1)) * s;
-            const x = c * (1 - Math.abs((h * 6) % 2 - 1));
-            const m = l - c / 2;
-            const hueSegment = h * 6;
-            
-            if (hueSegment < 1) [r, g, b] = [c, x, 0];
-            else if (hueSegment < 2) [r, g, b] = [x, c, 0];
-            else if (hueSegment < 3) [r, g, b] = [0, c, x];
-            else if (hueSegment < 4) [r, g, b] = [0, x, c];
-            else if (hueSegment < 5) [r, g, b] = [x, 0, c];
-            else [r, g, b] = [c, 0, x];
+const stage  = document.getElementById('stage');
+const replay = document.getElementById('replay');
+const title  = document.getElementById('title');
 
-            r = Math.round((r + m) * 255).toString(16).padStart(2, '0');
-            g = Math.round((g + m) * 255).toString(16).padStart(2, '0');
-            b = Math.round((b + m) * 255).toString(16).padStart(2, '0');
-            return `#${r}${g}${b}`;
-        }
+/* 外抛方向（初始“炸开”用） */
+const directions = [
+  {dx:'0vw',dy:'-80vh'},{dx:'0vw',dy:'80vh'},
+  {dx:'-80vw',dy:'0vh'},{dx:'80vw',dy:'0vh'},
+  {dx:'-70vw',dy:'-70vh'},{dx:'70vw',dy:'-70vh'},
+  {dx:'-70vw',dy:'70vh'},{dx:'70vw',dy:'70vh'},
+  {dx:'0vw',dy:'-60vh'},{dx:'0vw',dy:'60vh'},
+  {dx:'-60vw',dy:'0vh'},{dx:'60vw',dy:'0vh'}
+];
 
-        // 生成更多爱心顶点（提升密度）
-        function getHeartPoints(count) {
-            const points = [];
-            for (let i = 0; i < count; i++) {
-                const t = Math.PI * 2 * i / count;
-                const x = 16 * Math.pow(Math.sin(t), 3);
-                const y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
-                points.push({ x, y });
-            }
-            // 从爱心最上方开始排序，确保分布均匀
-            const minYIndex = points.findIndex(p => p.y === Math.min(...points.map(p => p.y)));
-            return [...points.slice(minYIndex), ...points.slice(0, minYIndex)];
-        }
+function rand(min,max){return Math.random()*(max-min)+min;}
+function randomGradient(){
+  const arr=[
+    ['#ff758c','#ff7eb3'], ['#a18cd1','#fbc2eb'],
+    ['#f6d365','#fda085'], ['#84fab0','#8fd3f4'],
+    ['#f093fb','#f5576c'], ['#4facfe','#00f2fe'],
+    ['#43e97b','#38f9d7'], ['#fa709a','#fee140'],
+    ['#30cfd0','#330867'], ['#5ee7df','#b490ca']
+  ];
+  const [c1,c2]=arr[Math.floor(Math.random()*arr.length)];
+  return `linear-gradient(135deg,${c1},${c2})`;
+}
 
-        // 减少位置偏移，让弹窗更集中
-        function jitter() {
-            return Math.floor(Math.random() * (CONFIG.JITTER_RANGE * 2 + 1)) - CONFIG.JITTER_RANGE;
-        }
+/* 心形参数方程（最终定型位置） */
+function heartXY(t){
+  const s = 16; // 爱心尺寸：12~22 可调
+  const x = s * (16 * Math.sin(t)**3);
+  const y = -s * (13*Math.cos(t) - 5*Math.cos(2*t) - 2*Math.cos(3*t) - Math.cos(4*t));
+  return {x: x+'px', y: y+'px'};
+}
 
-        // 线性插值函数
-        function lerp(start, end, t) {
-            return start + (end - start) * t;
-        }
+function createMsg(i,total){
+  const el = document.createElement('div');
+  el.className = 'msg';
 
-        // 创建缩小版弹窗
-        function createTipWindow(x, y, color, text) {
-            const div = document.createElement('div');
-            div.className = 'tip-window';
-            div.style.left = `${x}px`;
-            div.style.top = `${y}px`;
-            div.style.backgroundColor = color;
-            div.textContent = text;
-            div.style.display = 'none';
-            document.body.appendChild(div);
-            return div;
-        }
+  const d = directions[Math.floor(Math.random()*directions.length)];
+  el.style.setProperty('--dx', d.dx);
+  el.style.setProperty('--dy', d.dy);
+  el.style.setProperty('--rot', rand(-55,55)+'deg');
+  el.style.setProperty('--dur', (rand(6.8,8.6))+'s');
+  el.style.setProperty('--delay', (i*0.11 + rand(0,0.35))+'s');
+  el.style.setProperty('--bg', randomGradient());
 
-        // 引导页逻辑
-        const introModal = document.getElementById('introModal');
-        const startBtn = document.getElementById('startBtn');
-        startBtn.addEventListener('click', () => {
-            introModal.style.display = 'none';
-            initHeartWindows();
-        });
+  // 均匀映射到 0~2π 的心形路径
+  const t = (i / total) * Math.PI * 2;
+  const {x,y} = heartXY(t);
+  el.style.setProperty('--heart-x', x);
+  el.style.setProperty('--heart-y', y);
+  el.style.setProperty('--heart-rot', rand(-18,18)+'deg');
 
-        // 初始化密集爱心弹窗
-        let allWindows = [];
-        function initHeartWindows() {
-            const screenW = window.innerWidth;
-            const screenH = window.innerHeight;
-            const winW = 120; // 缩小后的弹窗宽度
-            const winH = 36;  // 缩小后的弹窗高度
+  // 文本容器
+  const span = document.createElement('span');
+  span.className = 'text';
+  span.textContent = tips[Math.floor(Math.random()*tips.length)];
+  el.appendChild(span);
 
-            // 关键：缩小爱心缩放比例，让弹窗更紧凑
-            const scaleX = (screenW - winW - 30) / (16 * 2); // 原60，缩小50%
-            const scaleY = (screenH - winH - 60) / (17 + 13); // 原120，缩小50%
-            const scale = Math.max(6, Math.min(scaleX, scaleY)); // 原10，降低最小缩放值
-            const centerX = screenW / 2;
-            const centerY = screenH / 2 - 60; // 原120，同步上移，让爱心位置更居中
+  // 回收前切心瓣
+  const delay = parseFloat(el.style.getPropertyValue('--delay'));
+  const dur   = parseFloat(el.style.getPropertyValue('--dur'));
+  const switchAt = delay + dur * 0.86;
+  const switchTimer = setTimeout(()=>{ el.classList.add('heart-mode'); }, switchAt*1000);
 
-            // 生成更多顶点，创建更密集的弹窗
-            const heartPoints = getHeartPoints(CONFIG.HEART_COUNT);
-            heartPoints.forEach((point, idx) => {
-                // 计算弹窗位置，偏移更小，更贴近爱心轮廓
-                let px = centerX + point.x * scale - winW / 2 + jitter();
-                let py = centerY - point.y * scale - winH / 2 + jitter();
-                // 缩小边距，让弹窗更贴近屏幕边缘
-                px = Math.max(CONFIG.MARGIN, Math.min(px, screenW - winW - CONFIG.MARGIN));
-                py = Math.max(CONFIG.MARGIN, Math.min(py, screenH - winH - CONFIG.MARGIN));
+  // flight 完成：定型并做一次心跳
+  el.addEventListener('animationend',()=>{
+    clearTimeout(switchTimer);
+    el.classList.add('heart-mode','locked','pulse');
 
-                // 更快的间隔显示弹窗，营造密集感
-                const color = randomPastelHex();
-                const text = CONFIG.MESSAGES[Math.floor(Math.random() * CONFIG.MESSAGES.length)];
-                const tipWin = createTipWindow(px, py, color, text);
-                setTimeout(() => {
-                    tipWin.style.display = 'flex';
-                }, idx * CONFIG.POP_INTERVAL_MS);
+    // 为“最终爆炸”预先计算飞散向量（基于心形中心向四周）
+    const spread = rand(140, 260);     // 爆散距离(px)
+    const ang    = rand(0, Math.PI*2); // 方向
+    const bx = Math.cos(ang)*spread;
+    const by = Math.sin(ang)*spread;
+    el.style.setProperty('--bx', bx+'px');
+    el.style.setProperty('--by', by+'px');
+  }, {once:true});
 
-                allWindows.push({
-                    elem: tipWin,
-                    initX: px,
-                    initY: py
-                });
-            });
+  stage.appendChild(el);
+}
 
-            // 调整总显示时间，匹配更快的弹窗生成速度
-            const totalShowMs = CONFIG.HEART_COUNT * CONFIG.POP_INTERVAL_MS + 400; // 原600，缩短33%
-            setTimeout(animateGather, totalShowMs);
-        }
+/* 触发最终爆炸 */
+function finalBurst(){
+  stage.querySelectorAll('.msg.locked').forEach(el=>{
+    el.classList.remove('pulse');
+    // 统一稍许随机延迟，让爆炸有层次
+    const jitter = rand(0, 200); // 0~200ms
+    setTimeout(()=> el.classList.add('burst'), jitter);
+    // 清理 DOM
+    el.addEventListener('animationend',()=> el.remove(), {once:true});
+  });
+}
 
-        // 弹窗收拢动画（保持流畅，适配密集弹窗）
-        function animateGather(step = 0) {
-            const screenW = window.innerWidth;
-            const screenH = window.innerHeight;
-            const winW = 120;
-            const winH = 36;
-            const gatherX = screenW / 2 - winW / 2;
-            const gatherY = screenH / 2 - winH / 2;
+/* 播放全流程 */
+function play(){
+  // 清空
+  stage.querySelectorAll('.msg').forEach(n=>n.remove());
+  title.style.opacity = 0;
 
-            if (step < CONFIG.GATHER_STEPS) {
-                const t = step / CONFIG.GATHER_STEPS;
-                allWindows.forEach(item => {
-                    const currentX = lerp(item.initX, gatherX, t);
-                    const currentY = lerp(item.initY, gatherY, t);
-                    item.elem.style.left = `${currentX}px`;
-                    item.elem.style.top = `${currentY}px`;
-                });
-                setTimeout(() => animateGather(step + 1), CONFIG.GATHER_INTERVAL_MS);
-            } else {
-                setTimeout(startExplode, 200);
-            }
-        }
+  const TOTAL = 220; // 200~280 都行
+  for(let i=0;i<TOTAL;i++) createMsg(i,TOTAL);
 
-        // 满屏密集弹窗
-        function startExplode() {
-            const screenW = window.innerWidth;
-            const screenH = window.innerHeight;
-            const winW = 120;
-            const winH = 36;
+  // 中心字样淡入
+  setTimeout(()=>{ title.style.opacity = 1; }, 1400);
 
-            // 销毁原爱心弹窗
-            allWindows.forEach(item => {
-                item.elem.remove();
-            });
-            allWindows = [];
+  // 等所有粒子都“定型心形”并心跳完，再统一爆炸
+  // 估算：最长 flight ≈ 8.6s + 最大延迟 ≈ 0.35 + 额外余量 0.3s，再等心跳 2.2s
+  const TOTAL_TIME_MS = (8.6 + 0.35 + 0.3 + 2.2) * 1000;
+  setTimeout(finalBurst, TOTAL_TIME_MS);
+}
 
-            // 增加满屏弹窗数量，保持密度一致
-            let targetTiles = CONFIG.EXPLODE_COUNT;
-            if (targetTiles <= 0) {
-                const cols = Math.max(1, Math.floor(screenW / winW));
-                const rows = Math.max(1, Math.floor(screenH / winH));
-                const totalCells = cols * rows;
-                targetTiles = Math.min(800, Math.max(CONFIG.HEART_COUNT, Math.floor(totalCells * 0.95))); // 覆盖率提至95%
-            }
-            targetTiles = Math.min(targetTiles, 800); // 提升最大弹窗数
-
-            // 缩小弹窗间距，增加密度
-            function generatePositions(n) {
-                const positions = [];
-                const baseDx = winW * 0.45; // 原0.65，缩小31%，减少间距
-                const baseDy = winH * 0.45 * 0.8;
-                let attempts = 0;
-                const maxAttempts = n * 150; // 增加尝试次数，确保生成足够位置
-
-                while (positions.length < n && attempts < maxAttempts) {
-                    const x = Math.floor(Math.random() * (screenW - winW - 2 * CONFIG.MARGIN)) + CONFIG.MARGIN;
-                    const y = Math.floor(Math.random() * (screenH - winH - 2 * CONFIG.MARGIN)) + CONFIG.MARGIN;
-                    const isOverlap = positions.some(pos => {
-                        const cx1 = pos.x + winW / 2;
-                        const cy1 = pos.y + winH / 2;
-                        const cx2 = x + winW / 2;
-                        const cy2 = y + winH / 2;
-                        const dx = Math.abs(cx1 - cx2);
-                        const dy = Math.abs(cy1 - cy2);
-                        const thx = Math.random() * (baseDx * 1.1 - baseDx * 0.5) + baseDx * 0.5; // 缩小阈值
-                        const thy = Math.random() * (baseDy * 1.1 - baseDy * 0.5) + baseDy * 0.5;
-                        return dx < thx && dy < thy;
-                    });
-                    if (!isOverlap) {
-                        positions.push({ x, y });
-                    }
-                    attempts++;
-                }
-
-                // 补充位置，确保数量足够
-                while (positions.length < n) {
-                    const x = Math.floor(Math.random() * (screenW - winW - 2 * CONFIG.MARGIN)) + CONFIG.MARGIN;
-                    const y = Math.floor(Math.random() * (screenH - winH - 2 * CONFIG.MARGIN)) + CONFIG.MARGIN;
-                    positions.push({ x, y });
-                }
-                return positions;
-            }
-
-            // 生成并显示满屏密集弹窗
-            const scatterPositions = generatePositions(targetTiles);
-            scatterPositions.forEach((pos, idx) => {
-                const color = randomPastelHex();
-                const text = CONFIG.MESSAGES[Math.floor(Math.random() * CONFIG.MESSAGES.length)];
-                const tipWin = createTipWindow(pos.x, pos.y, color, text);
-                setTimeout(() => {
-                    tipWin.style.display = 'flex';
-                }, idx * CONFIG.EXPLODE_INTERVAL_MS);
-                allWindows.push({ elem: tipWin });
-            });
-        }
-
-        // ESC键关闭重置
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                allWindows.forEach(item => {
-                    item.elem.remove();
-                });
-                allWindows = [];
-                introModal.style.display = 'flex';
-            }
-        });
-    </script>
+play();
+replay.onclick = play;
+</script>
 </body>
 </html>
